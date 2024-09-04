@@ -2,6 +2,8 @@ const Sale = require("../models/sale");
 const Product = require("../models/product");
 const User = require("../models/user");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
+
+// Add a new sale
 exports.addSale = async (req, res) => {
   const { name, mobile, productId, saleDate } = req.body;
 
@@ -9,20 +11,15 @@ exports.addSale = async (req, res) => {
     let user = await User.findOne({ mobile });
 
     if (!user) {
-      user = new User({
-        name,
-        mobile,
-      });
+      user = new User({ name, mobile });
       await user.save();
     }
 
     const product = await Product.findById(productId);
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) return errorResponse(res, 'Product not found', 404);
 
     const warrantyExpiry = new Date(saleDate);
-    warrantyExpiry.setFullYear(
-      warrantyExpiry.getFullYear() + parseInt(product.warranty)
-    );
+    warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + parseInt(product.warranty));
 
     let sale = await Sale.findOne({ user: user._id });
 
@@ -32,9 +29,7 @@ exports.addSale = async (req, res) => {
         products: [{ product: product._id, saleDate, warrantyExpiry }],
       });
     } else {
-      const existingProduct = sale.products.find(
-        (p) => p.product.toString() === product._id.toString()
-      );
+      const existingProduct = sale.products.find(p => p.product.toString() === product._id.toString());
 
       if (!existingProduct) {
         sale.products.push({ product: product._id, saleDate, warrantyExpiry });
@@ -45,28 +40,22 @@ exports.addSale = async (req, res) => {
     }
 
     await sale.save();
-
-    res.status(201).json(sale);
-    successResponse(res, sale);
+    successResponse(res, sale, 'Sale added successfully', 201);
   } catch (err) {
-    res.status(500).json({ error: err.message });
     errorResponse(res, err.message);
   }
 };
 
+// Add a service to a sale
 exports.addService = async (req, res) => {
-  const { saleId, productId, serviceTypeId, serviceDate, servicePrice } =
-    req.body;
+  const { saleId, productId, serviceTypeId, serviceDate, servicePrice } = req.body;
 
   try {
     const sale = await Sale.findById(saleId);
-    if (!sale) return res.status(404).json({ error: "Sale not found" });
+    if (!sale) return errorResponse(res, 'Sale not found', 404);
 
-    const productEntry = sale.products.find(
-      (p) => p.product.toString() === productId.toString()
-    );
-    if (!productEntry)
-      return res.status(404).json({ error: "Product not found in the sale" });
+    const productEntry = sale.products.find(p => p.product.toString() === productId.toString());
+    if (!productEntry) return errorResponse(res, 'Product not found in the sale', 404);
 
     productEntry.services.push({
       serviceType: serviceTypeId,
@@ -75,25 +64,31 @@ exports.addService = async (req, res) => {
     });
 
     await sale.save();
-
-    res.status(201).json(sale);
+    successResponse(res, sale, 'Service added successfully', 201);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    errorResponse(res, err.message);
   }
 };
 
+// Get all sales
 exports.getAllSales = async (req, res) => {
   try {
     const sales = await Sale.find()
       .populate("user")
       .populate("products.product")
       .populate("products.services.serviceType");
-    res.json(sales);
+
+    if (!sales || sales.length === 0) {
+      return successResponse(res, null, 'No sales found');
+    }
+
+    successResponse(res, sales, 'Sales retrieved successfully');
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    errorResponse(res, err.message);
   }
 };
 
+// Get a sale by ID
 exports.getSaleById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -101,9 +96,11 @@ exports.getSaleById = async (req, res) => {
       .populate("user")
       .populate("products.product")
       .populate("products.services.serviceType");
-    if (!sale) return res.status(404).json({ error: "Sale not found" });
-    res.json(sale);
+
+    if (!sale) return errorResponse(res, 'Sale not found', 404);
+
+    successResponse(res, sale, 'Sale retrieved successfully');
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    errorResponse(res, err.message);
   }
 };
