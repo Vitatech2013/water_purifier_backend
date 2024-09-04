@@ -1,40 +1,61 @@
-const Service = require("../models/service");
+const ServiceType = require('../models/service');
 
-exports.getAllServices = async (req, res) => {
-  try {
-    const services = await Service.find();
-    res.json(services);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+// Create a new service type
+exports.addServiceType = async (req, res) => {
+    try {
+        const { name, description, price } = req.body;
+        const newServiceType = new ServiceType({ name, description, price });
+        await newServiceType.save();
+        res.status(201).json(newServiceType);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
-exports.addService = async (req, res) => {
-  const service = new Service(req.body);
-  try {
-    const newService = await service.save();
-    res.status(201).json(newService);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+// Get all service types
+exports.getAllServiceTypes = async (req, res) => {
+    try {
+        const serviceTypes = await ServiceType.find();
+        res.status(200).json(serviceTypes);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
-exports.updateService = async (req, res) => {
-  try {
-    const service = await Service.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.json(service);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+// Get a single service type by ID
+exports.getServiceTypeById = async (req, res) => {
+    try {
+        const serviceType = await ServiceType.findById(req.params.id);
+        if (!serviceType) return res.status(404).json({ message: 'Service type not found' });
+        res.status(200).json(serviceType);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
-exports.deleteService = async (req, res) => {
-  try {
-    await Service.findByIdAndUpdate(req.params.id, { status: "inactive" });
-    res.json({ message: "Service deactivated" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+// Update a service type by ID
+exports.updateServiceType = async (req, res) => {
+    try {
+        const { name, description, price } = req.body;
+        const updatedServiceType = await ServiceType.findByIdAndUpdate(
+            req.params.id,
+            { name, description, price },
+            { new: true }
+        );
+        if (!updatedServiceType) return res.status(404).json({ message: 'Service type not found' });
+        res.status(200).json(updatedServiceType);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete a service type by ID
+exports.deleteServiceType = async (req, res) => {
+    try {
+        const deletedServiceType = await ServiceType.findByIdAndDelete(req.params.id);
+        if (!deletedServiceType) return res.status(404).json({ message: 'Service type not found' });
+        res.status(200).json({ message: 'Service type deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };

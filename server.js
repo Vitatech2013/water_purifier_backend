@@ -1,28 +1,31 @@
 const express = require("express");
-const cors = require("cors");
+const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-const path = require("path");
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const cors = require("cors");
+const ownerRoutes = require("./routes/ownerRoutes");
+const productRoutes = require("./routes/productRoutes");
+const saleRoutes = require("./routes/saleRoutes");
+const serviceTypeRoutes = require("./routes/serviceRoutes");
 
-require("dotenv").config();
+dotenv.config();
 connectDB();
 
-const userRoute = require("./routes/userRoutes");
-const productRoute = require("./routes/productRoutes");
-const serviceRoute = require("./routes/serviceRoutes");
-const salesRoute = require("./routes/saleRoutes");
+const app = express();
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+const corsOptions = {
+  origin: ["http://localhost:5000", "http://localhost:4200"],
+  // methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  // credentials: true,
+};
 
-app.use("/api/user", userRoute);
-app.use("/api/product", productRoute);
-app.use("/api/service", serviceRoute);
-app.use("/api/sale", salesRoute);
+app.use(cors(corsOptions));
+
+app.use(express.json());
+
+app.use("/api/owner", ownerRoutes);
+app.use("/api/product", productRoutes);
+app.use("/api/sale", saleRoutes);
+app.use("/api/service", serviceTypeRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
