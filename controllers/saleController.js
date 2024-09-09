@@ -16,10 +16,18 @@ exports.addSale = async (req, res) => {
     }
 
     const product = await Product.findById(productId);
-    if (!product) return errorResponse(res, 'Product not found', 404);
+    if (!product) return errorResponse(res, "Product not found", 404);
 
     const warrantyExpiry = new Date(saleDate);
-    warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + parseInt(product.warranty));
+    if (product.warrantyType === "months") {
+      warrantyExpiry.setMonth(
+        warrantyExpiry.getMonth() + parseInt(product.warranty)
+      );
+    } else if (product.warrantyType === "years") {
+      warrantyExpiry.setFullYear(
+        warrantyExpiry.getFullYear() + parseInt(product.warranty)
+      );
+    }
 
     let sale = await Sale.findOne({ user: user._id });
 
@@ -29,7 +37,9 @@ exports.addSale = async (req, res) => {
         products: [{ product: product._id, saleDate, warrantyExpiry }],
       });
     } else {
-      const existingProduct = sale.products.find(p => p.product.toString() === product._id.toString());
+      const existingProduct = sale.products.find(
+        (p) => p.product.toString() === product._id.toString()
+      );
 
       if (!existingProduct) {
         sale.products.push({ product: product._id, saleDate, warrantyExpiry });
@@ -40,7 +50,7 @@ exports.addSale = async (req, res) => {
     }
 
     await sale.save();
-    successResponse(res, sale, 'Sale added successfully', 201);
+    successResponse(res, sale, "Sale added successfully", 201);
   } catch (err) {
     errorResponse(res, err.message);
   }
@@ -48,14 +58,18 @@ exports.addSale = async (req, res) => {
 
 // Add a service to a sale
 exports.addService = async (req, res) => {
-  const { saleId, productId, serviceTypeId, serviceDate, servicePrice } = req.body;
+  const { saleId, productId, serviceTypeId, serviceDate, servicePrice } =
+    req.body;
 
   try {
     const sale = await Sale.findById(saleId);
-    if (!sale) return errorResponse(res, 'Sale not found', 404);
+    if (!sale) return errorResponse(res, "Sale not found", 404);
 
-    const productEntry = sale.products.find(p => p.product.toString() === productId.toString());
-    if (!productEntry) return errorResponse(res, 'Product not found in the sale', 404);
+    const productEntry = sale.products.find(
+      (p) => p.product.toString() === productId.toString()
+    );
+    if (!productEntry)
+      return errorResponse(res, "Product not found in the sale", 404);
 
     productEntry.services.push({
       serviceType: serviceTypeId,
@@ -64,7 +78,7 @@ exports.addService = async (req, res) => {
     });
 
     await sale.save();
-    successResponse(res, sale, 'Service added successfully', 201);
+    successResponse(res, sale, "Service added successfully", 201);
   } catch (err) {
     errorResponse(res, err.message);
   }
@@ -79,10 +93,10 @@ exports.getAllSales = async (req, res) => {
       .populate("products.services.serviceType");
 
     if (!sales || sales.length === 0) {
-      return successResponse(res, null, 'No sales found');
+      return successResponse(res, null, "No sales found");
     }
 
-    successResponse(res, sales, 'Sales retrieved successfully');
+    successResponse(res, sales, "Sales retrieved successfully");
   } catch (err) {
     errorResponse(res, err.message);
   }
@@ -97,9 +111,44 @@ exports.getSaleById = async (req, res) => {
       .populate("products.product")
       .populate("products.services.serviceType");
 
-    if (!sale) return errorResponse(res, 'Sale not found', 404);
+    if (!sale) return errorResponse(res, "Sale not found", 404);
 
-    successResponse(res, sale, 'Sale retrieved successfully');
+    successResponse(res, sale, "Sale retrieved successfully");
+  } catch (err) {
+    errorResponse(res, err.message);
+  }
+};
+
+// Get all sales
+exports.getAllSales = async (req, res) => {
+  try {
+    const sales = await Sale.find()
+      .populate("user")
+      .populate("products.product")
+      .populate("products.services.serviceType");
+
+    if (!sales || sales.length === 0) {
+      return successResponse(res, null, "No sales found");
+    }
+
+    successResponse(res, sales, "Sales retrieved successfully");
+  } catch (err) {
+    errorResponse(res, err.message);
+  }
+};
+
+// Get a sale by ID
+exports.getSaleById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const sale = await Sale.findById(id)
+      .populate("user")
+      .populate("products.product")
+      .populate("products.services.serviceType");
+
+    if (!sale) return errorResponse(res, "Sale not found", 404);
+
+    successResponse(res, sale, "Sale retrieved successfully");
   } catch (err) {
     errorResponse(res, err.message);
   }

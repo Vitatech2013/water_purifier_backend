@@ -1,5 +1,3 @@
-// utils/responseUtils.js
-
 exports.successResponse = (res, data, message, statusCode = 200) => {
   if (!data) {
     return res.status(200).json({

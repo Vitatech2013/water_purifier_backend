@@ -1,7 +1,6 @@
 const ServiceType = require("../models/service");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
-// Create a new service type
 exports.addServiceType = async (req, res) => {
   try {
     const { name, description, price } = req.body;
@@ -18,7 +17,6 @@ exports.addServiceType = async (req, res) => {
   }
 };
 
-// Get all service types
 exports.getAllServiceTypes = async (req, res) => {
   try {
     const serviceTypes = await ServiceType.find();
@@ -31,7 +29,6 @@ exports.getAllServiceTypes = async (req, res) => {
   }
 };
 
-// Get a single service type by ID
 exports.getServiceTypeById = async (req, res) => {
   try {
     const serviceType = await ServiceType.findById(req.params.id);
@@ -44,7 +41,6 @@ exports.getServiceTypeById = async (req, res) => {
   }
 };
 
-// Update a service type by ID
 exports.updateServiceType = async (req, res) => {
   try {
     const { name, description, price } = req.body;
@@ -66,7 +62,6 @@ exports.updateServiceType = async (req, res) => {
   }
 };
 
-// Delete a service type by ID
 exports.deleteServiceType = async (req, res) => {
   try {
     const deletedServiceType = await ServiceType.findByIdAndDelete(
