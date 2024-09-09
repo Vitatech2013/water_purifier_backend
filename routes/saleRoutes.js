@@ -9,7 +9,7 @@ const {
 const cors = require("cors");
 
 const corsOptions = {
-  origin: ["http://localhost:5000", "http://localhost:4200"],
+  origin: ["http://78.142.47.247:7000"],
 };
 
 router.use(cors(corsOptions));

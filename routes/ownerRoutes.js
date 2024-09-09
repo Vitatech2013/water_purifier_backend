@@ -4,7 +4,7 @@ const { register, login } = require("../controllers/ownerController");
 const router = express.Router();
 const cors = require("cors");
 const corsOptions = {
-  origin: ["http://localhost:5000", "http://localhost:4200"],
+  origin: ["http://78.142.47.247:7000"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };

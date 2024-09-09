@@ -10,8 +10,8 @@ const {
 } = require("../controllers/serviceController");
 
 const corsOptions = {
-  origin: ["http://localhost:5000", "http://localhost:4200"],
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    origin: ["http://78.142.47.247:7000"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };
 
