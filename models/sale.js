@@ -7,6 +7,11 @@ const saleSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     products: [
       {
         product: {
@@ -15,6 +20,8 @@ const saleSchema = new mongoose.Schema(
           required: true,
         },
         saleDate: { type: Date, required: true },
+        salePrice: { type: Number, required: true },
+        discountPercentage: { type: Number, default: 0 },
         warrantyExpiry: { type: Date },
         services: [
           {

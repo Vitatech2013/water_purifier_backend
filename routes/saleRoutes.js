@@ -7,6 +7,7 @@ const {
   getSaleById,
 } = require("../controllers/saleController");
 const cors = require("cors");
+const { protect } = require("../middleware/authMiddleware");
 
 const corsOptions = {
   origin: ["http://78.142.47.247:7000"],
@@ -14,12 +15,11 @@ const corsOptions = {
 
 router.use(cors(corsOptions));
 
+router.use(protect);
+
 router.post("/add", addSale);
-
 router.post("/addservice", addService);
-
 router.get("/", getAllSales);
-
 router.get("/:id", getSaleById);
 
 module.exports = router;

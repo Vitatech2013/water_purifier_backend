@@ -8,6 +8,11 @@ const productSchema = new mongoose.Schema(
     warranty: { type: Number, required: true },
     warrantyType: { type: String, enum: ["months", "years"], required: true },
     description: { type: String },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Owner",
+      required: true,
+    },
   },
   { timestamps: true }
 );

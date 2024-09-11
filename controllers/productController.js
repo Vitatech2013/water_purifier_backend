@@ -3,7 +3,6 @@ const multer = require("multer");
 const path = require("path");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
-// Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -28,6 +27,7 @@ exports.addProduct = async (req, res) => {
         warranty,
         warrantyType,
         description,
+        ownerId: req.owner._id,
       });
       await newProduct.save();
       successResponse(res, newProduct, "Product added successfully", 201);
@@ -39,7 +39,7 @@ exports.addProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({ ownerId: req.owner._id });
     if (!products || products.length === 0) {
       return successResponse(res, null, "No products found");
     }
@@ -51,7 +51,10 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findOne({
+      _id: req.params.id,
+      ownerId: req.owner._id,
+    });
     if (!product) {
       return successResponse(res, null, "Product not found");
     }
@@ -79,14 +82,20 @@ exports.updateProduct = async (req, res) => {
       };
       if (productImg) updateData.productImg = productImg;
 
-      const updatedProduct = await Product.findByIdAndUpdate(
-        req.params.id,
+      const updatedProduct = await Product.findOneAndUpdate(
+        { _id: req.params.id, ownerId: req.owner._id },
         updateData,
         { new: true }
       );
+
       if (!updatedProduct) {
-        return successResponse(res, null, "Product not found");
+        return successResponse(
+          res,
+          null,
+          "Product not found or not authorized"
+        );
       }
+
       successResponse(res, updatedProduct, "Product updated successfully");
     } catch (error) {
       errorResponse(res, error.message);
@@ -96,10 +105,15 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    const deletedProduct = await Product.findOneAndDelete({
+      _id: req.params.id,
+      ownerId: req.owner._id,
+    });
+
     if (!deletedProduct) {
-      return successResponse(res, null, "Product not found");
+      return successResponse(res, null, "Product not found or not authorized");
     }
+
     successResponse(res, null, "Product deleted successfully");
   } catch (error) {
     errorResponse(res, error.message);
