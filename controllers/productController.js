@@ -1,8 +1,8 @@
 const Product = require("../models/product");
 const multer = require("multer");
-const path = require("path");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
+// Multer setup for handling image uploads
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -11,6 +11,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage }).single("file");
 
+// Add a new product
 exports.addProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
@@ -27,7 +28,7 @@ exports.addProduct = async (req, res) => {
         warranty,
         warrantyType,
         description,
-        ownerId: req.owner._id,
+        ownerId: req.user._id, // Link the product to the logged-in owner
       });
       await newProduct.save();
       successResponse(res, newProduct, "Product added successfully", 201);
@@ -37,9 +38,10 @@ exports.addProduct = async (req, res) => {
   });
 };
 
+// Get all products linked to the owner
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({ ownerId: req.owner._id });
+    const products = await Product.find({ ownerId: req.user._id });
     if (!products || products.length === 0) {
       return successResponse(res, null, "No products found");
     }
@@ -49,11 +51,12 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+// Get a single product by ID (only for the owner)
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findOne({
       _id: req.params.id,
-      ownerId: req.owner._id,
+      ownerId: req.user._id,
     });
     if (!product) {
       return successResponse(res, null, "Product not found");
@@ -64,6 +67,7 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// Update a product (only for the owner)
 exports.updateProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
@@ -83,7 +87,7 @@ exports.updateProduct = async (req, res) => {
       if (productImg) updateData.productImg = productImg;
 
       const updatedProduct = await Product.findOneAndUpdate(
-        { _id: req.params.id, ownerId: req.owner._id },
+        { _id: req.params.id, ownerId: req.user._id },
         updateData,
         { new: true }
       );
@@ -103,18 +107,24 @@ exports.updateProduct = async (req, res) => {
   });
 };
 
+// Mark a product as inactive (only for the owner)
 exports.deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findOneAndDelete({
-      _id: req.params.id,
-      ownerId: req.owner._id,
-    });
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user._id },
+      { status: "inactive" }, // Mark as inactive
+      { new: true }
+    );
 
-    if (!deletedProduct) {
+    if (!updatedProduct) {
       return successResponse(res, null, "Product not found or not authorized");
     }
 
-    successResponse(res, null, "Product deleted successfully");
+    successResponse(
+      res,
+      updatedProduct,
+      "Product marked as inactive successfully"
+    );
   } catch (error) {
     errorResponse(res, error.message);
   }

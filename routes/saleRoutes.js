@@ -10,9 +10,9 @@ const cors = require("cors");
 const { protect } = require("../middleware/authMiddleware");
 
 const corsOptions = {
-  origin: ["http://78.142.47.247:7000"],
+  // origin: ["http://78.142.47.247:7000"],
+  origin: ["http://localhost:7000"],
 };
-
 router.use(cors(corsOptions));
 
 router.use(protect);
