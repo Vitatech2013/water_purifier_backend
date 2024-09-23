@@ -9,12 +9,12 @@ const saleSchema = new mongoose.Schema(
     },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "Owner", 
       required: true,
     },
     technicianId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "Technician", 
       required: true,
     },
     products: [
