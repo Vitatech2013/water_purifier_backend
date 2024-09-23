@@ -1,108 +1,89 @@
-const ServiceType = require("../models/service");
+const Service = require("../models/service");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
-exports.addServiceType = async (req, res) => {
-  try {
-    const { name, description, price } = req.body;
+// Add a new service
+exports.addService = async (req, res) => {
+  const { serviceName, servicePrice, serviceDescription } = req.body;
 
-    const newServiceType = new ServiceType({
-      name,
-      description,
-      price,
-      ownerId: req.owner._id,
+  try {
+    const newService = new Service({
+      serviceName,
+      servicePrice,
+      serviceDescription,
+      ownerId: req.user._id, // Link the service to the logged-in owner
     });
 
-    await newServiceType.save();
-    successResponse(
-      res,
-      newServiceType,
-      "Service type added successfully",
-      201
-    );
+    await newService.save();
+    successResponse(res, newService, "Service added successfully", 201);
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
 
-exports.getAllServiceTypes = async (req, res) => {
+// Get all services linked to the owner
+exports.getAllServices = async (req, res) => {
   try {
-    const serviceTypes = await ServiceType.find({ ownerId: req.owner._id });
-    if (!serviceTypes || serviceTypes.length === 0) {
-      return successResponse(
-        res,
-        null,
-        "No service types found for this owner"
-      );
+    const services = await Service.find({ ownerId: req.user._id });
+    if (!services || services.length === 0) {
+      return successResponse(res, null, "No services found");
     }
-    successResponse(res, serviceTypes, "Service types retrieved successfully");
+    successResponse(res, services, "Services retrieved successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
 
-exports.getServiceTypeById = async (req, res) => {
+// Get a single service by ID (only for the owner)
+exports.getServiceById = async (req, res) => {
   try {
-    const serviceType = await ServiceType.findOne({
+    const service = await Service.findOne({
       _id: req.params.id,
-      ownerId: req.owner._id,
+      ownerId: req.user._id,
     });
-    if (!serviceType) {
-      return successResponse(
-        res,
-        null,
-        "Service type not found for this owner"
-      );
+    if (!service) {
+      return successResponse(res, null, "Service not found");
     }
-    successResponse(res, serviceType, "Service type retrieved successfully");
+    successResponse(res, service, "Service retrieved successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
 
-exports.updateServiceType = async (req, res) => {
-  try {
-    const { name, description, price } = req.body;
+// Update a service (only for the owner)
+exports.updateService = async (req, res) => {
+  const { serviceName, servicePrice, serviceDescription } = req.body;
 
-    const updatedServiceType = await ServiceType.findOneAndUpdate(
-      { _id: req.params.id, ownerId: req.owner._id },
-      { name, description, price },
+  try {
+    const updatedService = await Service.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user._id },
+      { serviceName, servicePrice, serviceDescription },
       { new: true }
     );
 
-    if (!updatedServiceType) {
-      return successResponse(
-        res,
-        null,
-        "Service type not found or not authorized"
-      );
+    if (!updatedService) {
+      return successResponse(res, null, "Service not found or not authorized");
     }
 
-    successResponse(
-      res,
-      updatedServiceType,
-      "Service type updated successfully"
-    );
+    successResponse(res, updatedService, "Service updated successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
 
-exports.deleteServiceType = async (req, res) => {
+// Mark a service as inactive (only for the owner)
+exports.deleteService = async (req, res) => {
   try {
-    const deletedServiceType = await ServiceType.findOneAndDelete({
-      _id: req.params.id,
-      ownerId: req.owner._id,
-    });
+    const updatedService = await Service.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user._id },
+      { status: "inactive" }, // Mark as inactive
+      { new: true }
+    );
 
-    if (!deletedServiceType) {
-      return successResponse(
-        res,
-        null,
-        "Service type not found or not authorized"
-      );
+    if (!updatedService) {
+      return successResponse(res, null, "Service not found or not authorized");
     }
 
-    successResponse(res, null, "Service type deleted successfully");
+    successResponse(res, updatedService, "Service marked as inactive successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }

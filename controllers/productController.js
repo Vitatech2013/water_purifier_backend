@@ -1,6 +1,5 @@
 const Product = require("../models/product");
 const multer = require("multer");
-const path = require("path");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
 const storage = multer.diskStorage({
@@ -27,7 +26,7 @@ exports.addProduct = async (req, res) => {
         warranty,
         warrantyType,
         description,
-        ownerId: req.owner._id,
+        ownerId: req.user._id,
       });
       await newProduct.save();
       successResponse(res, newProduct, "Product added successfully", 201);
@@ -39,7 +38,7 @@ exports.addProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({ ownerId: req.owner._id });
+    const products = await Product.find({ ownerId: req.user._id });
     if (!products || products.length === 0) {
       return successResponse(res, null, "No products found");
     }
@@ -53,7 +52,7 @@ exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findOne({
       _id: req.params.id,
-      ownerId: req.owner._id,
+      ownerId: req.user._id,
     });
     if (!product) {
       return successResponse(res, null, "Product not found");
@@ -83,7 +82,7 @@ exports.updateProduct = async (req, res) => {
       if (productImg) updateData.productImg = productImg;
 
       const updatedProduct = await Product.findOneAndUpdate(
-        { _id: req.params.id, ownerId: req.owner._id },
+        { _id: req.params.id, ownerId: req.user._id },
         updateData,
         { new: true }
       );
@@ -105,16 +104,21 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findOneAndDelete({
-      _id: req.params.id,
-      ownerId: req.owner._id,
-    });
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.user._id },
+      { status: "inactive" },
+      { new: true }
+    );
 
-    if (!deletedProduct) {
+    if (!updatedProduct) {
       return successResponse(res, null, "Product not found or not authorized");
     }
 
-    successResponse(res, null, "Product deleted successfully");
+    successResponse(
+      res,
+      updatedProduct,
+      "Product marked as inactive successfully"
+    );
   } catch (error) {
     errorResponse(res, error.message);
   }

@@ -6,21 +6,16 @@ const {
   updateProduct,
   deleteProduct,
 } = require("../controllers/productController");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 
 const router = express.Router();
-const cors = require("cors");
-const corsOptions = {
-  origin: ["http://78.142.47.247:7000"],
-};
 
-router.use(cors(corsOptions));
 router.use(protect);
 
-router.post("/add", addProduct);
-router.get("/", getAllProducts);
-router.get("/:id", getProductById);
-router.put("/:id", updateProduct);
-router.delete("/:id", deleteProduct);
+router.post("/add", restrictTo("owner"), addProduct);
+router.get("/", restrictTo("owner"), getAllProducts);
+router.get("/:id", restrictTo("owner"), getProductById);
+router.put("/:id", restrictTo("owner"), updateProduct);
+router.delete("/:id", restrictTo("owner"), deleteProduct);
 
 module.exports = router;
