@@ -18,8 +18,8 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-  // origin: ["http://78.142.47.247:7000"],
-  origin: ["http://localhost:7000"],
+  origin: ["http://78.142.47.247:7002"],
+  // origin: ["http://localhost:7000"],
 };
 
 app.use(cors(corsOptions));
@@ -38,5 +38,5 @@ app.use("/api/user", userRoutes);
 
 
 
-const PORT = process.env.PORT || 7000;
+const PORT = process.env.PORT || 7002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
