@@ -1,4 +1,6 @@
 const express = require("express");
+const cors = require("cors");
+
 const {
   addService,
   getAllServices,
@@ -9,7 +11,11 @@ const {
 const { protect, restrictTo } = require("../middleware/authMiddleware");
 
 const router = express.Router();
-
+const corsOptions = {
+  origin: ["http://78.142.47.247:7002"],
+  // origin: ["http://localhost:7000"],
+};
+router.use(cors(corsOptions));
 router.use(protect); // Protect all service routes (ensure the user is authenticated)
 
 // Routes for managing services
