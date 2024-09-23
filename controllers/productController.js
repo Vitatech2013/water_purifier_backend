@@ -2,7 +2,6 @@ const Product = require("../models/product");
 const multer = require("multer");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
-// Multer setup for handling image uploads
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -11,7 +10,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage }).single("file");
 
-// Add a new product
 exports.addProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
@@ -28,7 +26,7 @@ exports.addProduct = async (req, res) => {
         warranty,
         warrantyType,
         description,
-        ownerId: req.user._id, // Link the product to the logged-in owner
+        ownerId: req.user._id,
       });
       await newProduct.save();
       successResponse(res, newProduct, "Product added successfully", 201);
@@ -38,7 +36,6 @@ exports.addProduct = async (req, res) => {
   });
 };
 
-// Get all products linked to the owner
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.find({ ownerId: req.user._id });
@@ -51,7 +48,6 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Get a single product by ID (only for the owner)
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findOne({
@@ -67,7 +63,6 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// Update a product (only for the owner)
 exports.updateProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
@@ -107,12 +102,11 @@ exports.updateProduct = async (req, res) => {
   });
 };
 
-// Mark a product as inactive (only for the owner)
 exports.deleteProduct = async (req, res) => {
   try {
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user._id },
-      { status: "inactive" }, // Mark as inactive
+      { status: "inactive" },
       { new: true }
     );
 

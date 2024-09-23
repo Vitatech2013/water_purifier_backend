@@ -3,6 +3,7 @@ const Product = require("../models/product");
 const User = require("../models/user");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
+// Add Sale controller
 exports.addSale = async (req, res) => {
   const {
     name,
@@ -15,19 +16,21 @@ exports.addSale = async (req, res) => {
   } = req.body;
 
   try {
+    // Find or create a user by mobile number and ownerId
     let user = await User.findOne({ mobile, ownerId });
-
     if (!user) {
       user = new User({ name, mobile, ownerId });
       await user.save();
     }
 
+    // Check if the product exists
     const product = await Product.findById(productId);
     if (!product) return errorResponse(res, "Product not found", 404);
 
     const originalPrice = Number(product.productPrice);
     let finalSalePrice, finalDiscountPercentage;
 
+    // Calculate sale price based on discount or salePrice
     if (discountPercentage) {
       finalSalePrice =
         originalPrice - (originalPrice * discountPercentage) / 100;
@@ -44,6 +47,7 @@ exports.addSale = async (req, res) => {
       );
     }
 
+    // Calculate warranty expiry based on sale date
     const warrantyExpiry = new Date(saleDate);
     if (product.warrantyType === "months") {
       warrantyExpiry.setMonth(
@@ -55,8 +59,10 @@ exports.addSale = async (req, res) => {
       );
     }
 
+    // Find if a sale already exists for the user
     let sale = await Sale.findOne({ user: user._id, ownerId: req.owner._id });
 
+    // If sale doesn't exist, create a new one
     if (!sale) {
       sale = new Sale({
         user: user._id,
@@ -72,6 +78,7 @@ exports.addSale = async (req, res) => {
         ],
       });
     } else {
+      // If the sale exists, update the existing product or add a new one
       const existingProduct = sale.products.find(
         (p) => p.product.toString() === product._id.toString()
       );
@@ -99,20 +106,24 @@ exports.addSale = async (req, res) => {
   }
 };
 
+// Add Service controller
 exports.addService = async (req, res) => {
   const { saleId, productId, serviceTypeId, serviceDate, servicePrice } =
     req.body;
 
   try {
+    // Find the sale by saleId and ownerId
     const sale = await Sale.findOne({ _id: saleId, ownerId: req.owner._id });
     if (!sale) return errorResponse(res, "Sale not found", 404);
 
+    // Find the product in the sale
     const productEntry = sale.products.find(
       (p) => p.product.toString() === productId.toString()
     );
     if (!productEntry)
       return errorResponse(res, "Product not found in the sale", 404);
 
+    // Add the service to the product's services array
     productEntry.services.push({
       serviceType: serviceTypeId,
       serviceDate,
@@ -126,8 +137,10 @@ exports.addService = async (req, res) => {
   }
 };
 
+// Get all sales controller
 exports.getAllSales = async (req, res) => {
   try {
+    // Find all sales by ownerId
     const sales = await Sale.find({ ownerId: req.owner._id })
       .populate("user")
       .populate("products.product")
@@ -143,9 +156,11 @@ exports.getAllSales = async (req, res) => {
   }
 };
 
+// Get sale by id controller
 exports.getSaleById = async (req, res) => {
   const { id } = req.params;
   try {
+    // Find the sale by id and ownerId
     const sale = await Sale.findOne({ _id: id, ownerId: req.owner._id })
       .populate("user")
       .populate("products.product")

@@ -1,17 +1,18 @@
 const mongoose = require("mongoose");
 
-const serviceTypeSchema = new mongoose.Schema(
+const serviceSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    description: { type: String },
-    price: { type: Number },
+    serviceName: { type: String, required: true },
+    servicePrice: { type: Number, required: true },
+    serviceDescription: { type: String, required: true },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Owner",
+      ref: "Owner", // Link to Owner model
       required: true,
-    }, 
+    },
+    status: { type: String, enum: ["active", "inactive"], default: "active" }, // Active/inactive status
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ServiceType", serviceTypeSchema);
+module.exports = mongoose.model("Service", serviceSchema);

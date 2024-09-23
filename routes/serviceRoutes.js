@@ -1,26 +1,22 @@
 const express = require("express");
 const {
-  addServiceType,
-  getAllServiceTypes,
-  getServiceTypeById,
-  updateServiceType,
-  deleteServiceType,
+  addService,
+  getAllServices,
+  getServiceById,
+  updateService,
+  deleteService,
 } = require("../controllers/serviceController");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 
 const router = express.Router();
-const cors = require("cors");
-const corsOptions = {
-  // origin: ["http://78.142.47.247:7000"],
-  origin: ["http://localhost:7000"],
-};
-router.use(cors(corsOptions));
-router.use(protect);
 
-router.post("/add", addServiceType);
-router.get("/", getAllServiceTypes);
-router.get("/:id", getServiceTypeById);
-router.put("/:id", updateServiceType);
-router.delete("/:id", deleteServiceType);
+router.use(protect); // Protect all service routes (ensure the user is authenticated)
+
+// Routes for managing services
+router.post("/add", restrictTo("owner"), addService); // Only owner can add services
+router.get("/", restrictTo("owner"), getAllServices); // Only owner can fetch all services
+router.get("/:id", restrictTo("owner"), getServiceById); // Only owner can get service by id
+router.put("/:id", restrictTo("owner"), updateService); // Only owner can update services
+router.delete("/:id", restrictTo("owner"), deleteService); // Only owner can mark a service as inactive
 
 module.exports = router;
