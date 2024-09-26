@@ -104,20 +104,25 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const updatedProduct = await Product.findOneAndUpdate(
-      { _id: req.params.id, ownerId: req.user._id },
-      { status: "inactive" },
-      { new: true }
-    );
+    const product = await Product.findOne({
+      _id: req.params.id,
+      ownerId: req.user._id,
+    });
 
-    if (!updatedProduct) {
+    if (!product) {
       return successResponse(res, null, "Product not found or not authorized");
     }
 
+    // Toggle the status
+    const newStatus = product.status === "active" ? "inactive" : "active";
+
+    product.status = newStatus;
+    await product.save(); // Save the updated product
+
     successResponse(
       res,
-      updatedProduct,
-      "Product marked as inactive successfully"
+      product,
+      `Product marked as ${newStatus} successfully`
     );
   } catch (error) {
     errorResponse(res, error.message);
