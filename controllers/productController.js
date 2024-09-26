@@ -113,11 +113,10 @@ exports.deleteProduct = async (req, res) => {
       return successResponse(res, null, "Product not found or not authorized");
     }
 
-    // Toggle the status
     const newStatus = product.status === "active" ? "inactive" : "active";
 
     product.status = newStatus;
-    await product.save(); // Save the updated product
+    await product.save(); 
 
     successResponse(
       res,
