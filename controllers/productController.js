@@ -104,26 +104,31 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
+    console.log("Requesting to toggle status for product ID:", req.params.id);
+
     const product = await Product.findOne({
       _id: req.params.id,
       ownerId: req.user._id,
     });
+    console.log("Found product:", product);
 
     if (!product) {
       return successResponse(res, null, "Product not found or not authorized");
     }
 
     const newStatus = product.status === "active" ? "inactive" : "active";
-
     product.status = newStatus;
-    await product.save(); 
+
+    await product.save();
+    console.log("Updated product status to:", product.status);
 
     successResponse(
       res,
       product,
-      `Product marked as ${newStatus} successfully`
+      `Product status changed to ${newStatus} successfully`
     );
   } catch (error) {
+    console.error("Error toggling product status:", error);
     errorResponse(res, error.message);
   }
 };
