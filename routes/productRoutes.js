@@ -13,6 +13,7 @@ const router = express.Router();
 const corsOptions = {
   origin: ["http://78.142.47.247:7002"],
   // origin: ["http://localhost:7000"],
+  // origin: ["http://localhost:7000"],
 };
 router.use(cors(corsOptions));
 router.use(protect);
