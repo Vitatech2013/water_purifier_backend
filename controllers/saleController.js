@@ -8,7 +8,6 @@ exports.addSale = async (req, res) => {
   const {
     name,
     mobile,
-    ownerId,
     productId,
     saleDate,
     discountPercentage,
@@ -17,9 +16,9 @@ exports.addSale = async (req, res) => {
 
   try {
     // Find or create a user by mobile number and ownerId
-    let user = await User.findOne({ mobile, ownerId });
+    let user = await User.findOne({ mobile, ownerId: req.owner._id });  // Reference `req.owner._id`
     if (!user) {
-      user = new User({ name, mobile, ownerId });
+      user = new User({ name, mobile, ownerId: req.owner._id });  // Reference `req.owner._id`
       await user.save();
     }
 
@@ -60,13 +59,13 @@ exports.addSale = async (req, res) => {
     }
 
     // Find if a sale already exists for the user
-    let sale = await Sale.findOne({ user: user._id, ownerId: req.owner._id });
+    let sale = await Sale.findOne({ user: user._id, ownerId: req.owner._id });  // Reference `req.owner._id`
 
     // If sale doesn't exist, create a new one
     if (!sale) {
       sale = new Sale({
         user: user._id,
-        ownerId: req.owner._id,
+        ownerId: req.owner._id,  // Reference `req.owner._id`
         products: [
           {
             product: product._id,
@@ -105,6 +104,7 @@ exports.addSale = async (req, res) => {
     errorResponse(res, err.message);
   }
 };
+
 
 // Add Service controller
 exports.addService = async (req, res) => {
