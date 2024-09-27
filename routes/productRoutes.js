@@ -15,7 +15,7 @@ const corsOptions = {
   // origin: ["http://localhost:7000"],
 };
 router.use(cors(corsOptions));
-router.use(protect);
+router.use(protect);   
 
 router.post("/add", restrictTo("owner"), addProduct);
 router.get("/", restrictTo("owner"), getAllProducts);
