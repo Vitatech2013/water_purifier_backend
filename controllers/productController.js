@@ -132,3 +132,4 @@ exports.deleteProduct = async (req, res) => {
     errorResponse(res, error.message);
   }
 };
+
