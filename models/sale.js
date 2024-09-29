@@ -15,7 +15,6 @@ const saleSchema = new mongoose.Schema(
     technicianId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Technician", 
-      required: true,
     },
     products: [
       {
