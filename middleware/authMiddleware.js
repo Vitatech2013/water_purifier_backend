@@ -5,23 +5,17 @@ const Technician = require("../models/technician");
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check if the user is an owner or technician
-      req.user =
-        (await Owner.findById(decoded.id).select("-password")) ||
-        (await Technician.findById(decoded.id).select("-password"));
+      req.user = await Owner.findById(decoded.id).select("-password") ||
+                 await Technician.findById(decoded.id).select("-password");
 
       if (!req.user) {
-        return res
-          .status(401)
-          .json({ message: "Not authorized, user not found" });
+        return res.status(401).json({ message: "Not authorized, user not found" });
       }
 
       req.role = decoded.role;
@@ -37,9 +31,7 @@ const protect = async (req, res, next) => {
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.role)) {
-      return res
-        .status(403)
-        .json({ message: "Access denied: Insufficient permissions" });
+      return res.status(403).json({ message: "Access denied: Insufficient permissions" });
     }
     next();
   };
