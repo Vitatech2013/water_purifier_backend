@@ -7,10 +7,10 @@ const serviceSchema = new mongoose.Schema(
     serviceDescription: { type: String, required: true },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Owner", // Link to Owner model
+      ref: "Owner", 
       required: true,
     },
-    status: { type: String, enum: ["active", "inactive"], default: "active" }, // Active/inactive status
+    status: { type: String, enum: ["active", "inactive"], default: "active" }, 
   },
   { timestamps: true }
 );

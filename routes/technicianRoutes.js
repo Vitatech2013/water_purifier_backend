@@ -8,11 +8,8 @@ const {
 } = require("../controllers/technicianContoller");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
 const cors = require("cors");
+const corsOptions = require("../constants");
 
-const corsOptions = {
-  origin: ["http://78.142.47.247:7002"],
-  // origin: ["http://localhost:7000"],
-};
 router.use(cors(corsOptions));
 router.post("/register", protect, restrictTo("owner"), registerTechnician);
 

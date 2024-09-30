@@ -10,10 +10,10 @@ const productSchema = new mongoose.Schema(
     description: { type: String },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Owner", 
+      ref: "Owner",
       required: true,
     },
-    status: { type: String, enum: ["active", "inactive"], default: "active" }, 
+    status: { type: String, enum: ["active", "inactive"], default: "active" },
   },
   { timestamps: true }
 );
