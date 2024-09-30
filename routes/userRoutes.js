@@ -4,10 +4,8 @@ const userController = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 const cors = require("cors");
 
-const corsOptions = {
-  origin: ["http://78.142.47.247:7002"],
-  // origin: ["http://localhost:7000"],
-};
+const corsOptions = require("../constants");
+
 
 router.use(cors(corsOptions));
 router.use(protect);

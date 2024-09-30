@@ -1,6 +1,5 @@
 const Technician = require("../models/technician");
 
-// Register a new technician
 const registerTechnician = async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -29,7 +28,6 @@ const registerTechnician = async (req, res) => {
   }
 };
 
-// Get a list of technicians for the authenticated owner
 const getTechnicians = async (req, res) => {
   try {
     const technicians = await Technician.find({ ownerId: req.user._id });
@@ -39,7 +37,6 @@ const getTechnicians = async (req, res) => {
   }
 };
 
-// Update a technician's information by the owner
 const updateTechnician = async (req, res) => {
   const { id } = req.params;
   const { name, email, password } = req.body;
@@ -58,7 +55,6 @@ const updateTechnician = async (req, res) => {
     if (email) technician.email = email;
     if (password) {
       technician.password = password;
-      // Optionally, hash the new password here
     }
 
     const updatedTechnician = await technician.save();
@@ -74,7 +70,6 @@ const updateTechnician = async (req, res) => {
   }
 };
 
-// Delete a technician by the owner
 const deleteTechnician = async (req, res) => {
   const { id } = req.params;
 

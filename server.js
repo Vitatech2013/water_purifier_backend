@@ -5,22 +5,17 @@ const cors = require("cors");
 const path = require("path");
 
 const ownerRoutes = require("./routes/ownerRoutes");
+const technicianRoutes = require("./routes/technicianRoutes");
+const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const saleRoutes = require("./routes/saleRoutes");
 const serviceTypeRoutes = require("./routes/serviceRoutes");
 const userRoutes = require("./routes/userRoutes");
-const technicianRoutes = require("./routes/technicianRoutes");
-const authRoutes = require("./routes/authRoutes");
-
+const corsOptions = require("./constants");
 dotenv.config();
 connectDB();
 
 const app = express();
-
-const corsOptions = {
-  origin: ["http://78.142.47.247:7002"],
-  // origin: ["http://localhost:7000"],
-};
 
 app.use(cors(corsOptions));
 

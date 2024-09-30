@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      default: null, 
+      default: null,
     },
   },
   { timestamps: true }
