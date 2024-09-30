@@ -16,7 +16,7 @@ router.use(protect);
 
 router.post("/add", restrictTo("owner"), addSale);
 router.post("/addservice", restrictTo("owner"), addService);
-router.get("/", restrictTo("owner"), getAllSales);
+router.get("/", getAllSales);
 router.get("/:id", restrictTo("owner"), getSaleById);
 
 module.exports = router;
