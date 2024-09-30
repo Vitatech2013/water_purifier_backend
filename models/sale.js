@@ -31,7 +31,7 @@ const saleSchema = new mongoose.Schema(
           {
             serviceType: {
               type: mongoose.Schema.Types.ObjectId,
-              ref: "ServiceType",
+              ref: "Service",
               required: true,
             },
             serviceDate: { type: Date, required: true },
