@@ -9,22 +9,28 @@ exports.addSale = async (req, res) => {
   const { name, mobile, productId, saleDate, discountPercentage, salePrice } =
     req.body;
 
+  // Validate required fields
   if (!productId || !saleDate) {
     return errorResponse(res, "Product ID and Sale Date are required", 400);
   }
 
-  const technicianId = req.role === "technician" ? req.user._id : null;
+  // Check the user's role
+  const isTechnician = req.role === "technician"; // Adjust this based on your actual role checking logic
+  const technicianId = isTechnician ? req.user._id : null; // Set technicianId if technician
 
   try {
+    // Find or create user
     let user = await User.findOne({ mobile, ownerId: req.owner._id });
     if (!user) {
       user = new User({ name, mobile, ownerId: req.owner._id });
       await user.save();
     }
 
+    // Find product
     const product = await Product.findById(productId);
     if (!product) return errorResponse(res, "Product not found", 404);
 
+    // Calculate final sale price and discount percentage
     const originalPrice = Number(product.productPrice);
     let finalSalePrice, finalDiscountPercentage;
 
@@ -44,6 +50,7 @@ exports.addSale = async (req, res) => {
       );
     }
 
+    // Calculate warranty expiry date
     const warrantyExpiry = new Date(saleDate);
     if (product.warrantyType === "months") {
       warrantyExpiry.setMonth(
@@ -55,13 +62,15 @@ exports.addSale = async (req, res) => {
       );
     }
 
+    // Check if a sale already exists for this user
     let sale = await Sale.findOne({ user: user._id, ownerId: req.owner._id });
 
     if (!sale) {
+      // Create new sale if not found
       sale = new Sale({
         user: user._id,
         ownerId: req.owner._id,
-        technicianId: technicianId,
+        technicianId: technicianId, // Set technicianId if applicable
         products: [
           {
             product: product._id,
@@ -73,11 +82,13 @@ exports.addSale = async (req, res) => {
         ],
       });
     } else {
+      // Update existing sale record
       const existingProduct = sale.products.find(
         (p) => p.product.toString() === product._id.toString()
       );
 
       if (!existingProduct) {
+        // If product is not already in the sale, add it
         sale.products.push({
           product: product._id,
           saleDate,
@@ -86,6 +97,7 @@ exports.addSale = async (req, res) => {
           discountPercentage: finalDiscountPercentage,
         });
       } else {
+        // If product already exists, update the details
         existingProduct.saleDate = saleDate;
         existingProduct.warrantyExpiry = warrantyExpiry;
         existingProduct.salePrice = finalSalePrice;
@@ -111,7 +123,8 @@ exports.getAllSales = async (req, res) => {
     const sales = await Sale.find(query)
       .populate("user")
       .populate("technicianId")
-      .populate("products.product");
+      .populate("products.product")
+      .populate("products.services.serviceType");
 
     if (!sales || sales.length === 0) {
       return successResponse(res, null, "No sales found");
