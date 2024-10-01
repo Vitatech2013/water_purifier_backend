@@ -21,15 +21,31 @@ exports.addService = async (req, res) => {
 
 exports.getAllServices = async (req, res) => {
   try {
-    const services = await Service.find({ ownerId: req.user._id });
+    // Check if the user is an owner or a technician
+    let query = {};
+
+    if (req.user.role === 'owner') {
+      // If the user is an owner, return services for that owner
+      query.ownerId = req.user._id; // Assuming req.user contains the owner's ID
+    } else if (req.user.role === 'technician') {
+      // If the user is a technician, return services that the technician can work on
+      // For now, let's assume it's services related to the technician's owner
+      query.ownerId = req.user.ownerId; // Assuming technician has an ownerId field
+    }
+
+    // Fetch services based on the query
+    const services = await Service.find(query);
+
     if (!services || services.length === 0) {
       return successResponse(res, null, "No services found");
     }
+
     successResponse(res, services, "Services retrieved successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
+
 
 exports.getServiceById = async (req, res) => {
   try {

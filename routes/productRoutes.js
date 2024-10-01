@@ -16,7 +16,7 @@ router.use(cors(corsOptions));
 router.use(protect);
 
 router.post("/add", restrictTo("owner"), addProduct);
-router.get("/", restrictTo("owner"), getAllProducts);
+router.get("/",  getAllProducts);
 router.get("/:id", restrictTo("owner"), getProductById);
 router.put("/:id", restrictTo("owner"), updateProduct);
 router.delete("/:id", restrictTo("owner"), deleteProduct);
