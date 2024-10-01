@@ -38,15 +38,27 @@ exports.addProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({ ownerId: req.user._id });
+    let products;
+
+    // Check if the user is an owner or a technician
+    if (req.user.role === 'owner') {
+      // If owner, get all products owned by them
+      products = await Product.find({ ownerId: req.user._id });
+    } else if (req.user.role === 'technician') {
+      // If technician, get products associated with their owner's ID
+      products = await Product.find({ ownerId: req.user.ownerId });
+    }
+
     if (!products || products.length === 0) {
       return successResponse(res, null, "No products found");
     }
+
     successResponse(res, products, "Products retrieved successfully");
   } catch (error) {
     errorResponse(res, error.message);
   }
 };
+
 
 exports.getProductById = async (req, res) => {
   try {
