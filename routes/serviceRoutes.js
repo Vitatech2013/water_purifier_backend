@@ -17,7 +17,7 @@ router.use(cors(corsOptions));
 router.use(protect);
 
 router.post("/add", restrictTo("owner"), addService);
-router.get("/", restrictTo("owner"), getAllServices);
+router.get("/",  getAllServices);
 router.get("/:id", restrictTo("owner"), getServiceById);
 router.put("/:id", restrictTo("owner"), updateService);
 router.delete("/:id", restrictTo("owner"), deleteService);
