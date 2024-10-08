@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-
 const {
   addService,
   getAllServices,
@@ -9,9 +8,9 @@ const {
   deleteService,
 } = require("../controllers/serviceController");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
+const corsOptions = require("../constants");
 
 const router = express.Router();
-const corsOptions = require("../constants");
 
 router.use(cors(corsOptions));
 router.use(protect);

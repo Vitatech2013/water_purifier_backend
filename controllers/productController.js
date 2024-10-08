@@ -2,6 +2,7 @@ const Product = require("../models/product");
 const multer = require("multer");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
+// Setup multer for file uploads
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -10,12 +11,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage }).single("file");
 
+// Add a product
 exports.addProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
 
-    const { productName, productPrice, warranty, warrantyType, description } =
-      req.body;
+    const { productName, productPrice, warranty, warrantyType, description } = req.body;
     const productImg = req.file ? req.file.filename : null;
 
     try {
@@ -36,16 +37,15 @@ exports.addProduct = async (req, res) => {
   });
 };
 
+// Get all products
 exports.getAllProducts = async (req, res) => {
   try {
     let products;
 
-    // Check if the user is an owner or a technician
     if (req.user.role === 'owner') {
-      // If owner, get all products owned by them
       products = await Product.find({ ownerId: req.user._id });
     } else if (req.user.role === 'technician') {
-      // If technician, get products associated with their owner's ID
+      // Assuming you want to fetch products associated with the owner's ID.
       products = await Product.find({ ownerId: req.user.ownerId });
     }
 
@@ -59,7 +59,7 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-
+// Get a product by ID
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findOne({
@@ -75,12 +75,12 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// Update a product
 exports.updateProduct = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, "File upload failed");
 
-    const { productName, productPrice, warranty, warrantyType, description } =
-      req.body;
+    const { productName, productPrice, warranty, warrantyType, description } = req.body;
     const productImg = req.file ? req.file.filename : undefined;
 
     try {
@@ -100,11 +100,7 @@ exports.updateProduct = async (req, res) => {
       );
 
       if (!updatedProduct) {
-        return successResponse(
-          res,
-          null,
-          "Product not found or not authorized"
-        );
+        return successResponse(res, null, "Product not found or not authorized");
       }
 
       successResponse(res, updatedProduct, "Product updated successfully");
@@ -114,15 +110,13 @@ exports.updateProduct = async (req, res) => {
   });
 };
 
+// Delete (toggle status) a product
 exports.deleteProduct = async (req, res) => {
   try {
-    console.log("Requesting to toggle status for product ID:", req.params.id);
-
     const product = await Product.findOne({
       _id: req.params.id,
       ownerId: req.user._id,
     });
-    console.log("Found product:", product);
 
     if (!product) {
       return successResponse(res, null, "Product not found or not authorized");
@@ -132,15 +126,8 @@ exports.deleteProduct = async (req, res) => {
     product.status = newStatus;
 
     await product.save();
-    console.log("Updated product status to:", product.status);
-
-    successResponse(
-      res,
-      product,
-      `Product status changed to ${newStatus} successfully`
-    );
+    successResponse(res, product, `Product status changed to ${newStatus} successfully`);
   } catch (error) {
-    console.error("Error toggling product status:", error);
     errorResponse(res, error.message);
   }
 };
