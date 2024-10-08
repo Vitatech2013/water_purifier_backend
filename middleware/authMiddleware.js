@@ -5,52 +5,42 @@ const Technician = require("../models/technician");
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
       token = req.headers.authorization.split(" ")[1];
-
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      console.log("Decoded Token ID:", decoded.id);
-
       const owner = await Owner.findById(decoded.id).select("-password");
-      const technician = await Technician.findById(decoded.id).select(
-        "-password"
-      );
-
-      console.log("Fetched Owner:", owner);
-      console.log("Fetched Technician:", technician);
+      const technician = await Technician.findById(decoded.id).select("-password");
 
       if (owner) {
         req.owner = owner;
         req.user = owner;
         req.role = "owner";
-        console.log("User role: Owner");
       } else if (technician) {
         req.technician = technician;
-        req.user = technician;
+        req.user = technician; // Setting user as technician
         req.role = "technician";
-        console.log("User role: Technician");
+        // Fetching the associated owner for the technician
+        const associatedOwner = await Owner.findById(technician.ownerId).select("-password");
+        req.owner = associatedOwner; // Assigning the owner to req.owner
       }
 
       if (!req.user) {
-        return res
-          .status(401)
-          .json({ message: "Not authorized, user not found" });
+        return res.status(401).json({ message: "Not authorized, user not found" });
       }
 
       next();
     } catch (error) {
-      console.error("Token verification failed:", error.message);
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {
     return res.status(401).json({ message: "Not authorized, no token" });
   }
 };
+
+
+
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.role)) {

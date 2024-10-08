@@ -1,97 +1,130 @@
 const Technician = require("../models/technician");
 
-const registerTechnician = async (req, res) => {
+// Register a new technician
+exports.registerTechnician = async (req, res) => {
   const { name, email, password } = req.body;
+  const ownerId = req.owner._id; // The ID of the logged-in owner
 
-  const technicianExists = await Technician.findOne({ email });
-  if (technicianExists) {
-    return res.status(400).json({ message: "Technician already exists" });
-  }
+  try {
+    // Check if a technician with the same email already exists under the same owner
+    const existingTechnician = await Technician.findOne({ ownerId, email });
 
-  const technician = await Technician.create({
-    name,
-    email,
-    password,
-    ownerId: req.user._id,
-  });
+    if (existingTechnician) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Technician with this email already exists under your ownership",
+      });
+    }
 
-  if (technician) {
+    // Proceed with adding the new technician if not found
+    const newTechnician = new Technician({
+      name,
+      email,
+      password,
+      ownerId, // Link the technician to the current owner
+    });
+
+    // Save the technician
+    await newTechnician.save();
+
     res.status(201).json({
-      _id: technician._id,
-      name: technician.name,
-      email: technician.email,
-      ownerId: technician.ownerId,
-      role: technician.role,
+      success: true,
+      message: "Technician registered successfully",
+      data: newTechnician,
     });
-  } else {
-    res.status(400).json({ message: "Invalid technician data" });
-  }
-};
-
-const getTechnicians = async (req, res) => {
-  try {
-    const technicians = await Technician.find({ ownerId: req.user._id });
-    res.status(200).json(technicians);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error registering technician:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
-const updateTechnician = async (req, res) => {
-  const { id } = req.params;
+// Get all technicians for the logged-in owner
+exports.getTechnicians = async (req, res) => {
+  try {
+    const technicians = await Technician.find({ ownerId: req.owner._id });
+
+    res.status(200).json({
+      success: true,
+      data: technicians,
+    });
+  } catch (error) {
+    console.error("Error fetching technicians:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Update technician information
+exports.updateTechnician = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    const technician = await Technician.findOne({
-      _id: id,
-      ownerId: req.user._id,
-    });
+    const technician = await Technician.findById(req.params.id);
 
-    if (!technician) {
-      return res.status(404).json({ message: "Technician not found" });
+    // Check if the technician belongs to the logged-in owner
+    if (technician.ownerId.toString() !== req.owner._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this technician",
+      });
     }
 
-    if (name) technician.name = name;
-    if (email) technician.email = email;
+    technician.name = name || technician.name;
+    technician.email = email || technician.email;
     if (password) {
-      technician.password = password;
+      technician.password = password; // Password should be hashed as per your existing logic
     }
 
-    const updatedTechnician = await technician.save();
+    await technician.save();
+
     res.status(200).json({
-      _id: updatedTechnician._id,
-      name: updatedTechnician.name,
-      email: updatedTechnician.email,
-      ownerId: updatedTechnician.ownerId,
-      role: updatedTechnician.role,
+      success: true,
+      message: "Technician updated successfully",
+      data: technician,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error updating technician:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
-const deleteTechnician = async (req, res) => {
-  const { id } = req.params;
-
+// Delete a technician
+exports.deleteTechnician = async (req, res) => {
   try {
-    const technician = await Technician.findOneAndDelete({
-      _id: id,
-      ownerId: req.user._id,
-    });
+    const technician = await Technician.findById(req.params.id);
 
-    if (!technician) {
-      return res.status(404).json({ message: "Technician not found" });
+    // Check if the technician belongs to the logged-in owner
+    if (technician.ownerId.toString() !== req.owner._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this technician",
+      });
     }
 
-    res.status(200).json({ message: "Technician removed" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
+    await technician.remove();
 
-module.exports = {
-  registerTechnician,
-  getTechnicians,
-  updateTechnician,
-  deleteTechnician,
+    res.status(200).json({
+      success: true,
+      message: "Technician deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting technician:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
 };

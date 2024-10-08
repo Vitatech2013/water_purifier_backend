@@ -6,91 +6,83 @@ const Service = require("../models/service");
 const { successResponse, errorResponse } = require("../utils/responseUtils");
 
 exports.addSale = async (req, res) => {
-  const {
-    name,
-    mobile,
-    productId,
-    saleDate,
-    discountPercentage,
-    salePrice,
-    technicianId,
-  } = req.body;
+  const { name, mobile, productId, saleDate, discountPercentage, salePrice } = req.body;
 
+  // Validate required fields
   if (!productId || !saleDate) {
     return errorResponse(res, "Product ID and Sale Date are required", 400);
   }
-  const isTechnician = req.role === "technician";
-  const finalTechnicianId = isTechnician ? req.user._id : technicianId;
 
-  if (isTechnician) {
-    console.log("Technician is making a request:", technicianId);
-  } else {
-    console.log("Owner is making a request:", req.owner._id);
-  }
+  // Determine if the current user is a technician
+  const isTechnician = req.role === "technician";
 
   try {
-    let user = await User.findOne({ mobile, ownerId: req.owner._id });
-    if (!user) {
+    // Check for existing user by mobile
+    let user = await User.findOne({ mobile });
+
+    // If the user exists, check if the owner ID matches
+    if (user) {
+      // If the existing user is associated with a different owner, create a new record
+      if (user.ownerId.toString() !== req.owner._id.toString()) {
+        // Create new user record with the new owner
+        user = new User({ name, mobile, ownerId: req.owner._id });
+        await user.save();
+      }
+    } else {
+      // Create new user if not found
       user = new User({ name, mobile, ownerId: req.owner._id });
       await user.save();
     }
 
+    // Find the product by ID
     const product = await Product.findById(productId);
     if (!product) return errorResponse(res, "Product not found", 404);
 
+    // Calculate sale price and discount
     const originalPrice = Number(product.productPrice);
     let finalSalePrice, finalDiscountPercentage;
 
     if (discountPercentage) {
-      finalSalePrice =
-        originalPrice - (originalPrice * discountPercentage) / 100;
+      finalSalePrice = originalPrice - (originalPrice * discountPercentage) / 100;
       finalDiscountPercentage = discountPercentage;
     } else if (salePrice) {
-      finalDiscountPercentage =
-        ((originalPrice - salePrice) / originalPrice) * 100;
+      finalDiscountPercentage = ((originalPrice - salePrice) / originalPrice) * 100;
       finalSalePrice = salePrice;
     } else {
-      return errorResponse(
-        res,
-        "Please provide either sale price or discount percentage",
-        400
-      );
+      return errorResponse(res, "Please provide either sale price or discount percentage", 400);
     }
 
+    // Calculate warranty expiry date
     const warrantyExpiry = new Date(saleDate);
     if (product.warrantyType === "months") {
-      warrantyExpiry.setMonth(
-        warrantyExpiry.getMonth() + parseInt(product.warranty)
-      );
+      warrantyExpiry.setMonth(warrantyExpiry.getMonth() + parseInt(product.warranty, 10));
     } else if (product.warrantyType === "years") {
-      warrantyExpiry.setFullYear(
-        warrantyExpiry.getFullYear() + parseInt(product.warranty)
-      );
+      warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + parseInt(product.warranty, 10));
     }
 
+    // Check if a sale already exists for the user and owner
     let sale = await Sale.findOne({ user: user._id, ownerId: req.owner._id });
 
     if (!sale) {
+      // Create new sale if none exists
       sale = new Sale({
         user: user._id,
         ownerId: req.owner._id,
-        technicianId: finalTechnicianId,
-        products: [
-          {
-            product: product._id,
-            saleDate,
-            warrantyExpiry,
-            salePrice: finalSalePrice,
-            discountPercentage: finalDiscountPercentage,
-          },
-        ],
+        technicianId: isTechnician ? req.user._id : null, // Save technicianId only if technician
+        products: [{
+          product: product._id,
+          saleDate,
+          warrantyExpiry,
+          salePrice: finalSalePrice,
+          discountPercentage: finalDiscountPercentage,
+        }],
       });
     } else {
-      const existingProduct = sale.products.find(
-        (p) => p.product.toString() === product._id.toString()
-      );
+      // Check if the product is already in the sale
+      const existingProduct = sale.products.find(p => p.product.toString() === product._id.toString());
 
       if (!existingProduct) {
+        // Add new product to the sale
         sale.products.push({
           product: product._id,
           saleDate,
@@ -99,6 +91,7 @@ exports.addSale = async (req, res) => {
           discountPercentage: finalDiscountPercentage,
         });
       } else {
+        // Update existing product sale details
         existingProduct.saleDate = saleDate;
         existingProduct.warrantyExpiry = warrantyExpiry;
         existingProduct.salePrice = finalSalePrice;
@@ -106,12 +99,71 @@ exports.addSale = async (req, res) => {
       }
     }
 
+    // Save the sale record
     await sale.save();
+
     successResponse(res, sale, "Sale added successfully", 201);
+  } catch (err) {
+    console.error('Error adding sale:', err); // Log error details for debugging
+    errorResponse(res, err.message);
+  }
+};
+
+
+
+exports.addService = async (req, res) => {
+  const { saleId, productId, serviceType, serviceDate, servicePrice } = req.body;
+
+  // Get user ID from the request
+  const userId = req.owner ? req.owner._id : req.technician ? req.technician._id : null;
+
+  // Check if the user ID is valid
+  if (!userId) {
+    return errorResponse(res, "Access denied: Insufficient permissions", 403);
+  }
+
+  try {
+    // Find the sale record by saleId and check access for both owner and technician
+    const sale = await Sale.findOne({
+      _id: saleId,
+      $or: [{ ownerId: req.owner ? req.owner._id : null }, { technicianId: req.technician ? req.technician._id : null }]
+    });
+    
+    // Check if the sale exists
+    if (!sale) {
+      return errorResponse(res, "Sale not found or not authorized", 404);
+    }
+
+    // Find the product in the sale
+    const product = sale.products.find((prod) => prod.product.toString() === productId);
+    if (!product) {
+      return errorResponse(res, "Product not found in the sale", 404);
+    }
+
+    // Add the service to the product's services array
+    product.services.push({
+      serviceType,
+      serviceDate,
+      servicePrice,
+    });
+
+    // Save the updated sale
+    await sale.save();
+    successResponse(res, sale, "Service added to sale successfully", 200);
   } catch (err) {
     errorResponse(res, err.message);
   }
 };
+
+
+
+
+
+
+
+
+
+
 
 exports.getAllSales = async (req, res) => {
   try {
@@ -151,35 +203,7 @@ exports.getAllSales = async (req, res) => {
   }
 };
 
-exports.addService = async (req, res) => {
-  const { saleId, productId, serviceType, serviceDate, servicePrice } =
-    req.body;
 
-  const technicianId = req.technician ? req.technician._id : null;
-
-  try {
-    const sale = await Sale.findOne({ _id: saleId, ownerId: req.owner._id });
-    if (!sale)
-      return errorResponse(res, "Sale not found or not authorized", 404);
-
-    const product = sale.products.find(
-      (prod) => prod.product.toString() === productId
-    );
-    if (!product)
-      return errorResponse(res, "Product not found in the sale", 404);
-
-    product.services.push({
-      serviceType,
-      serviceDate,
-      servicePrice,
-    });
-
-    await sale.save();
-    successResponse(res, sale, "Service added to sale successfully", 200);
-  } catch (err) {
-    errorResponse(res, err.message);
-  }
-};
 
 exports.getSaleById = async (req, res) => {
   const { id } = req.params;

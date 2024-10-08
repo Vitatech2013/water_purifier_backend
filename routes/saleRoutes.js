@@ -14,8 +14,8 @@ const router = express.Router();
 router.use(cors(corsOptions));
 router.use(protect);
 
-router.post("/add", restrictTo("owner"), addSale);
-router.post("/addservice", restrictTo("owner"), addService);
+router.post("/add", protect, restrictTo("owner", "technician"), addSale);
+router.post("/addservice", restrictTo("owner", "technician"), addService);
 router.get("/", getAllSales);
 router.get("/:id", restrictTo("owner"), getSaleById);
 
